@@ -25,10 +25,16 @@ import { CodebaseSearcher } from './core/search.js';
 import { analyzerRegistry } from './core/analyzer-registry.js';
 import { AngularAnalyzer } from './analyzers/angular/index.js';
 import { GenericAnalyzer } from './analyzers/generic/index.js';
+import { ReactAnalyzer } from './analyzers/react/index.js';
+import { NextJsAnalyzer } from './analyzers/nextjs/index.js';
+import { EcosystemAnalyzer } from './analyzers/orchestration/ecosystem.js';
 import { InternalFileGraph } from './utils/usage-tracker.js';
 import { IndexCorruptedError } from './errors/index.js';
 
+analyzerRegistry.register(new EcosystemAnalyzer());
 analyzerRegistry.register(new AngularAnalyzer());
+analyzerRegistry.register(new NextJsAnalyzer());
+analyzerRegistry.register(new ReactAnalyzer());
 analyzerRegistry.register(new GenericAnalyzer());
 
 // Resolve root path with validation
@@ -101,7 +107,7 @@ const TOOLS: Tool[] = [
           properties: {
             framework: {
               type: 'string',
-              description: 'Filter by framework (angular, react, vue)'
+              description: 'Filter by framework (angular, react, nextjs, vue, generic)'
             },
             language: {
               type: 'string',
@@ -1083,17 +1089,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  // Server startup banner (guarded to avoid stderr during MCP STDIO handshake)
-  if (process.env.CODEBASE_CONTEXT_DEBUG) {
-    console.error('[DEBUG] Codebase Context MCP Server');
-    console.error(`[DEBUG] Root: ${ROOT_PATH}`);
-    console.error(
-      `[DEBUG] Analyzers: ${analyzerRegistry
-        .getAll()
-        .map((a) => a.name)
-        .join(', ')}`
-    );
-  }
+  const shouldLogStartup = ['1', 'true', 'yes'].includes(
+    (process.env.CODEBASE_CONTEXT_DEBUG ?? '').toLowerCase()
+  );
+
+  const logStartup = (...args: unknown[]) => {
+    if (shouldLogStartup) console.error(...args);
+  };
+
+  logStartup('[DEBUG] Codebase Context MCP Server');
+  logStartup(`[DEBUG] Root: ${ROOT_PATH}`);
+  logStartup(
+    `[DEBUG] Analyzers: ${analyzerRegistry
+      .getAll()
+      .map((a) => a.name)
+      .join(', ')}`
+  );
 
   // Validate root path exists and is a directory
   try {
@@ -1108,24 +1119,20 @@ async function main() {
     console.error(`Please specify a valid project directory.`);
     process.exit(1);
   }
-
-  // Check for package.json to confirm it's a project root (guarded to avoid stderr during handshake)
-  if (process.env.CODEBASE_CONTEXT_DEBUG) {
-    try {
-      await fs.access(path.join(ROOT_PATH, 'package.json'));
-      console.error(`[DEBUG] Project detected: ${path.basename(ROOT_PATH)}`);
-    } catch {
-      console.error(`[DEBUG] WARNING: No package.json found. This may not be a project root.`);
-    }
+  try {
+    await fs.access(path.join(ROOT_PATH, 'package.json'));
+    logStartup(`[DEBUG] Project detected: ${path.basename(ROOT_PATH)}`);
+  } catch {
+    logStartup(`[DEBUG] WARNING: No package.json found. This may not be a project root.`);
   }
 
   const needsIndex = await shouldReindex();
 
   if (needsIndex) {
-    if (process.env.CODEBASE_CONTEXT_DEBUG) console.error('[DEBUG] Starting indexing...');
+    logStartup('[DEBUG] Starting indexing...');
     performIndexing();
   } else {
-    if (process.env.CODEBASE_CONTEXT_DEBUG) console.error('[DEBUG] Index found. Ready.');
+    logStartup('[DEBUG] Index found. Ready.');
     indexState.status = 'ready';
     indexState.lastIndexed = new Date();
   }
@@ -1133,7 +1140,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  if (process.env.CODEBASE_CONTEXT_DEBUG) console.error('[DEBUG] Server ready');
+  logStartup('[DEBUG] Server ready');
 }
 
 // Export server components for programmatic use
