@@ -26,7 +26,10 @@ import type {
   PatternCandidate
 } from './types/index.js';
 import { analyzerRegistry } from './core/analyzer-registry.js';
+import { EcosystemAnalyzer } from './analyzers/orchestration/ecosystem.js';
 import { AngularAnalyzer } from './analyzers/angular/index.js';
+import { NextJsAnalyzer } from './analyzers/nextjs/index.js';
+import { ReactAnalyzer } from './analyzers/react/index.js';
 import { GenericAnalyzer } from './analyzers/generic/index.js';
 import { IndexCorruptedError } from './errors/index.js';
 import {
@@ -49,7 +52,10 @@ import { CONTEXT_RESOURCE_URI, isContextResourceUri } from './resources/uri.js';
 import { readIndexMeta, validateIndexArtifacts } from './core/index-meta.js';
 import { TOOLS, dispatchTool, type ToolContext } from './tools/index.js';
 
+analyzerRegistry.register(new EcosystemAnalyzer());
 analyzerRegistry.register(new AngularAnalyzer());
+analyzerRegistry.register(new NextJsAnalyzer());
+analyzerRegistry.register(new ReactAnalyzer());
 analyzerRegistry.register(new GenericAnalyzer());
 
 // Resolve root path with validation
@@ -733,10 +739,14 @@ async function main() {
   const needsIndex = await shouldReindex();
 
   if (needsIndex) {
-    if (process.env.CODEBASE_CONTEXT_DEBUG) console.error('[DEBUG] Starting indexing...');
+    if (process.env.CODEBASE_CONTEXT_DEBUG) {
+      console.error('[DEBUG] Starting indexing...');
+    }
     performIndexing();
   } else {
-    if (process.env.CODEBASE_CONTEXT_DEBUG) console.error('[DEBUG] Index found. Ready.');
+    if (process.env.CODEBASE_CONTEXT_DEBUG) {
+      console.error('[DEBUG] Index found. Ready.');
+    }
     indexState.status = 'ready';
     indexState.lastIndexed = new Date();
   }
