@@ -11,7 +11,7 @@ This branch extends the original `codebase-context` MCP server with **React** an
 - **Next.js analyzer**: detects App Router vs Pages Router, route kinds (`page`/`layout`/`route`/`api`), route paths, `"use client"`, and metadata exports.
 - **Quieter startup by default**: set `CODEBASE_CONTEXT_DEBUG=1` only when you want startup/index logs.
 
-## Quick Start (GitHub branch)
+## Quick Start (GitHub)
 
 ### Claude Desktop / VS Code / Cursor
 
@@ -24,7 +24,7 @@ Add this to your MCP client config:
       "command": "npx",
       "args": [
         "-y",
-        "github:aolin480/codebase-context-react-nextjs#feature/reactjs-nextjs-analyzers",
+        "github:aolin480/codebase-context-react-nextjs#master",
         "/path/to/your/project"
       ]
     }
@@ -42,7 +42,7 @@ Add this to your Warp MCP configuration:
     "command": "npx",
     "args": [
       "-y",
-      "github:aolin480/codebase-context-react-nextjs#feature/reactjs-nextjs-analyzers",
+      "github:aolin480/codebase-context-react-nextjs#master",
       "/path/to/your/project"
     ]
   }
@@ -58,7 +58,7 @@ Add this to your Codex MCP configuration:
 command = "npx"
 args = [
   "-y",
-  "github:aolin480/codebase-context-react-nextjs#feature/reactjs-nextjs-analyzers",
+  "github:aolin480/codebase-context-react-nextjs#master",
   "/path/to/your/project"
 ]
 ```
@@ -73,7 +73,7 @@ Add this to your Gemini MCP configuration:
     "command": "npx",
     "args": [
       "-y",
-      "github:aolin480/codebase-context-react-nextjs#feature/reactjs-nextjs-analyzers",
+      "github:aolin480/codebase-context-react-nextjs#master",
       "/path/to/your/project"
     ]
   }
@@ -92,7 +92,7 @@ Add this to your OpenCode MCP configuration:
       "command": [
         "npx",
         "-y",
-        "github:aolin480/codebase-context-react-nextjs#feature/reactjs-nextjs-analyzers",
+        "github:aolin480/codebase-context-react-nextjs#master",
         "/path/to/your/project"
       ],
       "enabled": true
