@@ -26,7 +26,6 @@ import type {
   PatternCandidate
 } from './types/index.js';
 import { analyzerRegistry } from './core/analyzer-registry.js';
-import { EcosystemAnalyzer } from './analyzers/orchestration/ecosystem.js';
 import { AngularAnalyzer } from './analyzers/angular/index.js';
 import { NextJsAnalyzer } from './analyzers/nextjs/index.js';
 import { ReactAnalyzer } from './analyzers/react/index.js';
@@ -52,7 +51,6 @@ import { CONTEXT_RESOURCE_URI, isContextResourceUri } from './resources/uri.js';
 import { readIndexMeta, validateIndexArtifacts } from './core/index-meta.js';
 import { TOOLS, dispatchTool, type ToolContext } from './tools/index.js';
 
-analyzerRegistry.register(new EcosystemAnalyzer());
 analyzerRegistry.register(new AngularAnalyzer());
 analyzerRegistry.register(new NextJsAnalyzer());
 analyzerRegistry.register(new ReactAnalyzer());

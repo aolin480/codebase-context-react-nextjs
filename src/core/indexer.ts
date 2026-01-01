@@ -15,8 +15,8 @@ import {
   IndexingStats,
   IndexingPhase,
   CodebaseConfig,
+  FrameworkAnalyzer,
   Dependency,
-  ArchitecturalLayer,
   IntelligenceData
 } from '../types/index.js';
 import { analyzerRegistry } from './analyzer-registry.js';
@@ -44,6 +44,11 @@ import {
   RELATIONSHIPS_FILENAME,
   VECTOR_DB_DIRNAME
 } from '../constants/codebase-context.js';
+import {
+  detectEcosystemFromPackageJsons,
+  readRootPackageJson,
+  scanWorkspacePackageJsons
+} from '../analyzers/orchestration/package-json.js';
 
 const STAGING_DIRNAME = '.staging';
 const PREVIOUS_DIRNAME = '.previous';
@@ -1027,65 +1032,40 @@ export class CodebaseIndexer {
   }
 
   async detectMetadata(): Promise<CodebaseMetadata> {
-    // Get all registered analyzers (sorted by priority, highest first)
-    const analyzers = analyzerRegistry.getAll();
+    const defaultName = path.basename(this.rootPath);
+    let metadata = this.buildFallbackMetadata(defaultName);
+    const frameworkCandidates: Array<{
+      analyzerName: string;
+      priority: number;
+      metadata: CodebaseMetadata;
+      score: number;
+    }> = [];
 
-    // Start with base metadata template
-    let metadata: CodebaseMetadata = {
-      name: path.basename(this.rootPath),
-      rootPath: this.rootPath,
-      languages: [],
-      dependencies: [],
-      architecture: {
-        type: 'mixed',
-        layers: {
-          presentation: 0,
-          business: 0,
-          data: 0,
-          state: 0,
-          core: 0,
-          shared: 0,
-          feature: 0,
-          infrastructure: 0,
-          unknown: 0
-        },
-        patterns: []
-      },
-      styleGuides: [],
-      documentation: [],
-      projectStructure: {
-        type: 'single-app'
-      },
-      statistics: {
-        totalFiles: 0,
-        totalLines: 0,
-        totalComponents: 0,
-        componentsByType: {},
-        componentsByLayer: {
-          presentation: 0,
-          business: 0,
-          data: 0,
-          state: 0,
-          core: 0,
-          shared: 0,
-          feature: 0,
-          infrastructure: 0,
-          unknown: 0
-        }
-      },
-      customMetadata: {}
-    };
-
-    // Loop through all analyzers (highest priority first) and merge their metadata
-    // Higher priority analyzers' values win on conflicts
+    const analyzers = await this.selectMetadataAnalyzers(analyzerRegistry.getAll());
     for (const analyzer of analyzers) {
       try {
-        const analyzerMeta = await analyzer.detectCodebaseMetadata(this.rootPath);
-        metadata = this.mergeMetadata(metadata, analyzerMeta);
+        const analyzerMetadata = await analyzer.detectCodebaseMetadata(this.rootPath);
+        metadata = this.mergeMetadata(metadata, analyzerMetadata, analyzer.name, defaultName);
+
+        if (analyzerMetadata.framework) {
+          frameworkCandidates.push({
+            analyzerName: analyzer.name,
+            priority: analyzer.priority,
+            metadata: analyzerMetadata,
+            score: this.scoreFrameworkCandidate(analyzerMetadata)
+          });
+        }
       } catch (error) {
-        // Analyzer failed, continue with next
-        console.warn(`Analyzer ${analyzer.name} failed to detect metadata:`, error);
+        console.warn(`Failed to detect metadata with ${analyzer.name}:`, error);
       }
+    }
+
+    if (frameworkCandidates.length > 0) {
+      frameworkCandidates.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.priority - a.priority;
+      });
+      metadata.framework = frameworkCandidates[0].metadata.framework;
     }
 
     // Load intelligence data if available
@@ -1116,79 +1096,292 @@ export class CodebaseIndexer {
     return metadata;
   }
 
-  /**
-   * Merge two CodebaseMetadata objects.
-   * The 'incoming' metadata takes precedence for non-empty values.
-   */
-  private mergeMetadata(base: CodebaseMetadata, incoming: CodebaseMetadata): CodebaseMetadata {
+  private async selectMetadataAnalyzers(
+    analyzers: FrameworkAnalyzer[]
+  ): Promise<FrameworkAnalyzer[]> {
+    try {
+      const packageJsons = await scanWorkspacePackageJsons(this.rootPath);
+      const rootPackage = await readRootPackageJson(this.rootPath);
+      if (rootPackage && !packageJsons.some((p) => p.filePath === rootPackage.filePath)) {
+        packageJsons.unshift(rootPackage);
+      }
+      const ecosystem = detectEcosystemFromPackageJsons(packageJsons);
+      const enabled = new Set<string>(ecosystem.frameworks);
+
+      const selected = analyzers.filter(
+        (analyzer) => analyzer.name === "generic" || enabled.has(analyzer.name)
+      );
+
+      return selected.length > 0 ? selected : analyzers;
+    } catch {
+      return analyzers;
+    }
+  }
+
+  private buildFallbackMetadata(defaultName: string): CodebaseMetadata {
     return {
-      name: incoming.name || base.name,
-      rootPath: incoming.rootPath || base.rootPath,
-      languages: [...new Set([...base.languages, ...incoming.languages])], // Merge and deduplicate
-      dependencies: this.mergeDependencies(base.dependencies, incoming.dependencies),
-      framework: incoming.framework || base.framework, // Framework from higher priority analyzer wins
+      name: defaultName,
+      rootPath: this.rootPath,
+      languages: [],
+      dependencies: [],
       architecture: {
-        type: incoming.architecture?.type || base.architecture.type,
-        layers: this.mergeLayers(base.architecture.layers, incoming.architecture?.layers),
-        patterns: [
-          ...new Set([
-            ...(base.architecture.patterns || []),
-            ...(incoming.architecture?.patterns || [])
-          ])
-        ] // Merge and deduplicate
+        type: "mixed",
+        layers: {
+          presentation: 0,
+          business: 0,
+          data: 0,
+          state: 0,
+          core: 0,
+          shared: 0,
+          feature: 0,
+          infrastructure: 0,
+          unknown: 0,
+        },
+        patterns: [],
       },
-      styleGuides: [...new Set([...base.styleGuides, ...incoming.styleGuides])], // Merge and deduplicate
-      documentation: [...new Set([...base.documentation, ...incoming.documentation])], // Merge and deduplicate
-      projectStructure:
-        incoming.projectStructure?.type !== 'single-app'
-          ? incoming.projectStructure
-          : base.projectStructure,
-      statistics: this.mergeStatistics(base.statistics, incoming.statistics),
-      customMetadata: { ...base.customMetadata, ...incoming.customMetadata }
+      styleGuides: [],
+      documentation: [],
+      projectStructure: {
+        type: "single-app",
+      },
+      statistics: {
+        totalFiles: 0,
+        totalLines: 0,
+        totalComponents: 0,
+        componentsByType: {},
+        componentsByLayer: {
+          presentation: 0,
+          business: 0,
+          data: 0,
+          state: 0,
+          core: 0,
+          shared: 0,
+          feature: 0,
+          infrastructure: 0,
+          unknown: 0,
+        },
+      },
+      customMetadata: {},
     };
+  }
+
+  private mergeMetadata(
+    base: CodebaseMetadata,
+    incoming: CodebaseMetadata,
+    analyzerName: string,
+    defaultName: string
+  ): CodebaseMetadata {
+    const name = base.name !== defaultName ? base.name : (incoming.name || base.name);
+    const languages = this.mergeLanguages(base.languages, incoming.languages);
+    const dependencies = this.mergeDependencies(base.dependencies, incoming.dependencies);
+    const architecture = this.mergeArchitecture(base.architecture, incoming.architecture);
+    const styleGuides = this.mergeByFilePath(base.styleGuides, incoming.styleGuides);
+    const documentation = this.mergeByFilePath(base.documentation, incoming.documentation);
+    const projectStructure = this.mergeProjectStructure(base.projectStructure, incoming.projectStructure);
+    const statistics = this.mergeStatistics(base.statistics, incoming.statistics);
+    const customMetadata = this.mergeCustomMetadata(base.customMetadata, incoming.customMetadata, analyzerName);
+
+    return {
+      ...base,
+      name,
+      rootPath: incoming.rootPath || base.rootPath,
+      languages,
+      dependencies,
+      architecture,
+      styleGuides,
+      documentation,
+      projectStructure,
+      statistics,
+      customMetadata,
+    };
+  }
+
+  private mergeLanguages(
+    base: CodebaseMetadata["languages"],
+    incoming: CodebaseMetadata["languages"]
+  ): CodebaseMetadata["languages"] {
+    const byName = new Map<string, CodebaseMetadata["languages"][number]>();
+    for (const entry of base) {
+      byName.set(entry.name, entry);
+    }
+    for (const entry of incoming) {
+      const existing = byName.get(entry.name);
+      if (!existing) {
+        byName.set(entry.name, entry);
+        continue;
+      }
+      byName.set(entry.name, {
+        ...existing,
+        version: existing.version || entry.version,
+        fileCount: Math.max(existing.fileCount, entry.fileCount),
+        lineCount: Math.max(existing.lineCount, entry.lineCount),
+        percentage: Math.max(existing.percentage, entry.percentage),
+      });
+    }
+    return Array.from(byName.values());
   }
 
   private mergeDependencies(base: Dependency[], incoming: Dependency[]): Dependency[] {
-    const seen = new Set(base.map((d) => d.name));
-    const result = [...base];
-    for (const dep of incoming) {
-      if (!seen.has(dep.name)) {
-        result.push(dep);
-        seen.add(dep.name);
-      }
+    const byName = new Map<string, Dependency>();
+    const rank: Record<Dependency["category"], number> = {
+      framework: 7,
+      state: 6,
+      ui: 5,
+      routing: 4,
+      http: 3,
+      testing: 2,
+      utility: 1,
+      build: 1,
+      other: 0,
+    };
+
+    for (const dep of base) {
+      byName.set(dep.name, dep);
     }
-    return result;
+    for (const dep of incoming) {
+      const existing = byName.get(dep.name);
+      if (!existing) {
+        byName.set(dep.name, dep);
+        continue;
+      }
+      const nextCategory =
+        rank[dep.category] > rank[existing.category] ? dep.category : existing.category;
+      byName.set(dep.name, {
+        ...existing,
+        version: existing.version || dep.version,
+        category: nextCategory,
+      });
+    }
+
+    return Array.from(byName.values());
   }
 
-  private mergeLayers(
-    base: Record<ArchitecturalLayer, number>,
-    incoming?: Partial<Record<ArchitecturalLayer, number>>
-  ): Record<ArchitecturalLayer, number> {
-    if (!incoming) return base;
+  private mergeArchitecture(
+    base: CodebaseMetadata["architecture"],
+    incoming: CodebaseMetadata["architecture"]
+  ): CodebaseMetadata["architecture"] {
+    const layers = { ...base.layers };
+    for (const [layer, count] of Object.entries(incoming.layers)) {
+      const key = layer as keyof typeof layers;
+      layers[key] = Math.max(layers[key], count ?? 0);
+    }
+    const patterns = Array.from(new Set([...(base.patterns || []), ...(incoming.patterns || [])]));
+    const type =
+      base.type !== "mixed" ? base.type : incoming.type !== "mixed" ? incoming.type : base.type;
+
     return {
-      presentation: Math.max(base.presentation || 0, incoming.presentation || 0),
-      business: Math.max(base.business || 0, incoming.business || 0),
-      data: Math.max(base.data || 0, incoming.data || 0),
-      state: Math.max(base.state || 0, incoming.state || 0),
-      core: Math.max(base.core || 0, incoming.core || 0),
-      shared: Math.max(base.shared || 0, incoming.shared || 0),
-      feature: Math.max(base.feature || 0, incoming.feature || 0),
-      infrastructure: Math.max(base.infrastructure || 0, incoming.infrastructure || 0),
-      unknown: Math.max(base.unknown || 0, incoming.unknown || 0)
+      ...base,
+      type,
+      layers,
+      patterns,
     };
+  }
+
+  private mergeProjectStructure(
+    base: CodebaseMetadata["projectStructure"],
+    incoming: CodebaseMetadata["projectStructure"]
+  ): CodebaseMetadata["projectStructure"] {
+    if (base.type !== "single-app") {
+      return base;
+    }
+    if (incoming.type !== "single-app") {
+      return incoming;
+    }
+    return base;
   }
 
   private mergeStatistics(
-    base: CodebaseMetadata['statistics'],
-    incoming: CodebaseMetadata['statistics']
-  ): CodebaseMetadata['statistics'] {
+    base: CodebaseMetadata["statistics"],
+    incoming: CodebaseMetadata["statistics"]
+  ): CodebaseMetadata["statistics"] {
+    const componentsByType = { ...base.componentsByType };
+    for (const [key, value] of Object.entries(incoming.componentsByType)) {
+      componentsByType[key] = Math.max(componentsByType[key] || 0, value);
+    }
+
+    const componentsByLayer = { ...base.componentsByLayer };
+    for (const [key, value] of Object.entries(incoming.componentsByLayer)) {
+      const layer = key as keyof typeof componentsByLayer;
+      componentsByLayer[layer] = Math.max(componentsByLayer[layer] || 0, value);
+    }
+
+    const totalComponents = Math.max(
+      base.totalComponents,
+      incoming.totalComponents,
+      Object.values(componentsByType).reduce((sum, value) => sum + value, 0)
+    );
+
     return {
-      totalFiles: Math.max(base.totalFiles || 0, incoming.totalFiles || 0),
-      totalLines: Math.max(base.totalLines || 0, incoming.totalLines || 0),
-      totalComponents: Math.max(base.totalComponents || 0, incoming.totalComponents || 0),
-      componentsByType: { ...base.componentsByType, ...incoming.componentsByType },
-      componentsByLayer: this.mergeLayers(base.componentsByLayer, incoming.componentsByLayer)
+      ...base,
+      totalFiles: Math.max(base.totalFiles, incoming.totalFiles),
+      totalLines: Math.max(base.totalLines, incoming.totalLines),
+      totalComponents,
+      componentsByType,
+      componentsByLayer,
     };
+  }
+
+  private mergeByFilePath<T extends { filePath: string }>(base: T[], incoming: T[]): T[] {
+    const byPath = new Map<string, T>();
+    for (const entry of base) {
+      byPath.set(entry.filePath, entry);
+    }
+    for (const entry of incoming) {
+      if (!byPath.has(entry.filePath)) {
+        byPath.set(entry.filePath, entry);
+      }
+    }
+    return Array.from(byPath.values());
+  }
+
+  private mergeCustomMetadata(
+    base: Record<string, unknown>,
+    incoming: Record<string, unknown>,
+    analyzerName: string
+  ): Record<string, unknown> {
+    const baseAnalyzers =
+      base.analyzers && typeof base.analyzers === 'object' && !Array.isArray(base.analyzers)
+        ? (base.analyzers as Record<string, unknown>)
+        : {};
+    const incomingAnalyzers =
+      incoming.analyzers &&
+      typeof incoming.analyzers === 'object' &&
+      !Array.isArray(incoming.analyzers)
+        ? (incoming.analyzers as Record<string, unknown>)
+        : {};
+
+    return {
+      ...base,
+      ...incoming,
+      analyzers: {
+        ...baseAnalyzers,
+        ...incomingAnalyzers,
+        [analyzerName]: incoming,
+      },
+    };
+  }
+
+  private scoreFrameworkCandidate(metadata: CodebaseMetadata): number {
+    const framework = metadata.framework;
+    if (!framework) return 0;
+    const deps = new Set(metadata.dependencies.map((dep) => dep.name));
+    const expectedDeps: Record<string, string[]> = {
+      angular: ["@angular/core"],
+      nextjs: ["next"],
+      react: ["react", "react-dom"],
+      vue: ["vue"],
+      svelte: ["svelte"],
+      solid: ["solid-js"],
+      other: [],
+    };
+    const candidates = expectedDeps[framework.type] || [];
+    const hasFrameworkDep = candidates.some((dep) => deps.has(dep));
+
+    let score = 0;
+    if (framework.version && framework.version !== "unknown") score += 2;
+    if (hasFrameworkDep) score += 2;
+    if (framework.variant && framework.variant !== "unknown") score += 1;
+    return score;
   }
 
   getProgress(): IndexingProgress {
