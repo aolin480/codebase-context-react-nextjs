@@ -27,11 +27,9 @@ import { AngularAnalyzer } from './analyzers/angular/index.js';
 import { GenericAnalyzer } from './analyzers/generic/index.js';
 import { ReactAnalyzer } from './analyzers/react/index.js';
 import { NextJsAnalyzer } from './analyzers/nextjs/index.js';
-import { EcosystemAnalyzer } from './analyzers/orchestration/ecosystem.js';
 import { InternalFileGraph } from './utils/usage-tracker.js';
 import { IndexCorruptedError } from './errors/index.js';
 
-analyzerRegistry.register(new EcosystemAnalyzer());
 analyzerRegistry.register(new AngularAnalyzer());
 analyzerRegistry.register(new NextJsAnalyzer());
 analyzerRegistry.register(new ReactAnalyzer());

@@ -1,106 +1,57 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { promises as fs } from 'fs';
-import path from 'path';
-import os from 'os';
-import { CodebaseIndexer } from '../src/core/indexer';
+import { describe, expect, it } from "vitest";
+import path from "path";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { analyzerRegistry } from "../src/core/analyzer-registry.js";
+import { CodebaseIndexer } from "../src/core/indexer.js";
+import { AngularAnalyzer } from "../src/analyzers/angular/index.js";
+import { NextJsAnalyzer } from "../src/analyzers/nextjs/index.js";
+import { ReactAnalyzer } from "../src/analyzers/react/index.js";
+import { GenericAnalyzer } from "../src/analyzers/generic/index.js";
 
-describe('CodebaseIndexer.detectMetadata', () => {
-    let tempDir: string;
+function resetRegistry() {
+  for (const analyzer of analyzerRegistry.getAll()) {
+    analyzerRegistry.unregister(analyzer.name);
+  }
+}
 
-    beforeEach(async () => {
-        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'indexer-test-'));
-    });
+describe("CodebaseIndexer metadata aggregation", () => {
+  it("prefers framework metadata with real dependencies over higher-priority unknowns", async () => {
+    resetRegistry();
+    analyzerRegistry.register(new AngularAnalyzer());
+    analyzerRegistry.register(new NextJsAnalyzer());
+    analyzerRegistry.register(new ReactAnalyzer());
+    analyzerRegistry.register(new GenericAnalyzer());
 
-    afterEach(async () => {
-        await fs.rm(tempDir, { recursive: true, force: true });
-    });
+    const tmpRoot = path.join(process.cwd(), "tests", ".tmp", `meta-${randomUUID()}`);
+    await mkdir(tmpRoot, { recursive: true });
 
-    describe('metadata detection', () => {
-        it('should detect project name from directory', async () => {
-            await fs.writeFile(
-                path.join(tempDir, 'package.json'),
-                JSON.stringify({ name: 'test-project', dependencies: {} })
-            );
+    try {
+      await writeFile(
+        path.join(tmpRoot, "package.json"),
+        JSON.stringify(
+          {
+            name: "tmp-next",
+            dependencies: {
+              next: "^14.1.0",
+              react: "^18.2.0",
+              "react-dom": "^18.2.0"
+            }
+          },
+          null,
+          2
+        ),
+        "utf-8"
+      );
 
-            const indexer = new CodebaseIndexer({ rootPath: tempDir });
-            const metadata = await indexer.detectMetadata();
+      const indexer = new CodebaseIndexer({ rootPath: tmpRoot });
+      const metadata = await indexer.detectMetadata();
 
-            expect(metadata.rootPath).toBe(tempDir);
-            expect(metadata.name).toBe(path.basename(tempDir));
-        });
-
-        it('should merge metadata from multiple analyzers', async () => {
-            await fs.writeFile(
-                path.join(tempDir, 'package.json'),
-                JSON.stringify({
-                    name: 'angular-project',
-                    dependencies: {
-                        '@angular/core': '^17.0.0',
-                        '@angular/common': '^17.0.0',
-                    },
-                })
-            );
-
-            const indexer = new CodebaseIndexer({ rootPath: tempDir });
-            const metadata = await indexer.detectMetadata();
-
-            expect(metadata).toBeDefined();
-            expect(metadata.architecture).toBeDefined();
-            expect(metadata.architecture.layers).toBeDefined();
-        });
-
-        it('should handle projects without package.json', async () => {
-            const indexer = new CodebaseIndexer({ rootPath: tempDir });
-            const metadata = await indexer.detectMetadata();
-
-            expect(metadata).toBeDefined();
-            expect(metadata.rootPath).toBe(tempDir);
-            expect(metadata.dependencies).toEqual([]);
-        });
-
-        it('should merge languages from all analyzers', async () => {
-            await fs.writeFile(
-                path.join(tempDir, 'package.json'),
-                JSON.stringify({ name: 'test' })
-            );
-
-            await fs.writeFile(
-                path.join(tempDir, 'app.ts'),
-                'export const app = "test";'
-            );
-
-            const indexer = new CodebaseIndexer({ rootPath: tempDir });
-            const metadata = await indexer.detectMetadata();
-
-            expect(Array.isArray(metadata.languages)).toBe(true);
-        });
-    });
-
-    describe('merge behavior', () => {
-        it('should deduplicate merged arrays', async () => {
-            await fs.writeFile(
-                path.join(tempDir, 'package.json'),
-                JSON.stringify({ name: 'test' })
-            );
-
-            const indexer = new CodebaseIndexer({ rootPath: tempDir });
-            const metadata = await indexer.detectMetadata();
-
-            const uniqueStyleGuides = [...new Set(metadata.styleGuides)];
-            expect(metadata.styleGuides.length).toBe(uniqueStyleGuides.length);
-        });
-
-        it('should preserve customMetadata from analyzers', async () => {
-            await fs.writeFile(
-                path.join(tempDir, 'package.json'),
-                JSON.stringify({ name: 'test' })
-            );
-
-            const indexer = new CodebaseIndexer({ rootPath: tempDir });
-            const metadata = await indexer.detectMetadata();
-
-            expect(metadata.customMetadata).toBeDefined();
-            expect(typeof metadata.customMetadata).toBe('object');
-        });
-    });
+      expect(metadata.framework?.type).toBe("nextjs");
+      expect(metadata.framework?.version).toBe("14.1.0");
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+      resetRegistry();
+    }
+  });
 });

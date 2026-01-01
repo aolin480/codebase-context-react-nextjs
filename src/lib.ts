@@ -63,13 +63,11 @@ export { AngularAnalyzer } from './analyzers/angular/index.js';
 export { GenericAnalyzer } from './analyzers/generic/index.js';
 export { ReactAnalyzer } from './analyzers/react/index.js';
 export { NextJsAnalyzer } from './analyzers/nextjs/index.js';
-export { EcosystemAnalyzer } from './analyzers/orchestration/ecosystem.js';
 
 import { AngularAnalyzer } from './analyzers/angular/index.js';
 import { GenericAnalyzer } from './analyzers/generic/index.js';
 import { ReactAnalyzer } from './analyzers/react/index.js';
 import { NextJsAnalyzer } from './analyzers/nextjs/index.js';
-import { EcosystemAnalyzer } from './analyzers/orchestration/ecosystem.js';
 
 // Utilities
 export {
@@ -157,9 +155,6 @@ export function createIndexer(
   options?: Partial<Omit<import('./core/indexer.js').IndexerOptions, 'rootPath'>>
 ): import('./core/indexer.js').CodebaseIndexer {
   // Register default analyzers if not already registered
-  if (!analyzerRegistry.get('ecosystem')) {
-    analyzerRegistry.register(new EcosystemAnalyzer());
-  }
   if (!analyzerRegistry.get('angular')) {
     analyzerRegistry.register(new AngularAnalyzer());
   }
