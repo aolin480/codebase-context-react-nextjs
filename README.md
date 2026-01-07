@@ -11,95 +11,22 @@ This branch extends the original `codebase-context` MCP server with **React** an
 - **Next.js analyzer**: detects App Router vs Pages Router, route kinds (`page`/`layout`/`route`/`api`), route paths, `"use client"`, and metadata exports.
 - **Quieter startup by default**: set `CODEBASE_CONTEXT_DEBUG=1` only when you want startup/index logs.
 
-## Quick Start (GitHub)
+## Quick Start
 
-### Claude Desktop / VS Code / Cursor
-
-Add this to your MCP client config:
+Add this to your MCP client config (Claude Desktop, VS Code, Cursor, etc.):
 
 ```json
 {
   "mcpServers": {
-    "codebase-context-react-nextjs": {
+    "codebase-context": {
       "command": "npx",
-      "args": [
-        "-y",
-        "github:aolin480/codebase-context-react-nextjs#master",
-        "/path/to/your/project"
-      ]
+      "args": ["-y", "github:aolin480/codebase-context-react-nextjs#master", "/path/to/your/project"]
     }
   }
 }
 ```
 
-### Warp
-
-Add this to your Warp MCP configuration:
-
-```json
-{
-  "codebase-context-react-nextjs": {
-    "command": "npx",
-    "args": [
-      "-y",
-      "github:aolin480/codebase-context-react-nextjs#master",
-      "/path/to/your/project"
-    ]
-  }
-}
-```
-
-### Codex
-
-Add this to your Codex MCP configuration:
-
-```toml
-[mcp_servers.codebase-context-react-nextjs]
-command = "npx"
-args = [
-  "-y",
-  "github:aolin480/codebase-context-react-nextjs#master",
-  "/path/to/your/project"
-]
-```
-
-### Gemini
-
-Add this to your Gemini MCP configuration:
-
-```json
-{
-  "codebase-context-react-nextjs": {
-    "command": "npx",
-    "args": [
-      "-y",
-      "github:aolin480/codebase-context-react-nextjs#master",
-      "/path/to/your/project"
-    ]
-  }
-}
-```
-
-### OpenCode
-
-Add this to your OpenCode MCP configuration:
-
-```json
-{
-  "mcp": {
-    "codebase-context-react-nextjs": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "github:aolin480/codebase-context-react-nextjs#master",
-        "/path/to/your/project"
-      ],
-      "enabled": true
-    }
-  }
-}
-```
+For additional client examples (Warp, Codex, Gemini, OpenCode), see `MCPCONFIG.md`.
 
 ## Smoke Tests
 
