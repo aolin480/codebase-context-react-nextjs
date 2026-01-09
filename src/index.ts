@@ -747,6 +747,20 @@ async function main() {
     }
     indexState.status = 'ready';
     indexState.lastIndexed = new Date();
+    
+    // Pre-warm the embedding model in background to avoid timeout on first search
+    // This loads the ML model (can take 30-90s) before any search request comes in
+    if (process.env.CODEBASE_CONTEXT_PREWARM_MODEL !== 'false') {
+      logStartup('[DEBUG] Pre-warming embedding model...');
+      import('./embeddings/index.js')
+        .then(({ getEmbeddingProvider }) => getEmbeddingProvider())
+        .then(() => {
+          logStartup('[DEBUG] Embedding model ready');
+        })
+        .catch((err) => {
+          console.warn('[WARN] Failed to pre-warm embedding model:', err.message);
+        });
+    }
   }
 
   const transport = new StdioServerTransport();
