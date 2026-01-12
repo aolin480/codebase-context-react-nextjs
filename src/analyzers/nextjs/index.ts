@@ -25,6 +25,7 @@ import {
 } from "../../types/index.js";
 import { createChunksFromCode } from "../../utils/chunking.js";
 import { parseJsonInWorker } from "../../utils/async-json.js";
+import { getIndexStatsMaxBytes } from "../../utils/index-stats-threshold.js";
 import {
   getPackageName,
   mergeDependencies,
@@ -438,8 +439,11 @@ async function tryLoadIndexStatistics(rootPath: string): Promise<CodebaseMetadat
   try {
     const indexPath = path.join(rootPath, ".codebase-index.json");
     const stat = await fs.stat(indexPath);
-    // Avoid blocking the event loop parsing very large index files.
-    if (stat.size > 20 * 1024 * 1024) {
+
+    // Avoid parsing very large index files for metadata stats.
+    // Configurable via CODEBASE_CONTEXT_INDEX_STATS_MAX_MB (default: 20).
+    const maxBytes = getIndexStatsMaxBytes();
+    if (maxBytes === 0 || stat.size > maxBytes) {
       return base;
     }
     const indexContent = await fs.readFile(indexPath, "utf-8");
