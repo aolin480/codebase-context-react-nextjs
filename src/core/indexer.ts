@@ -963,11 +963,29 @@ export class CodebaseIndexer {
 
     // Read .gitignore if respecting it
     let ig: ReturnType<typeof ignore.default> | null = null;
+    let gitignorePatterns: string[] = [];
     if (this.config.respectGitignore) {
       try {
         const gitignorePath = path.join(this.rootPath, '.gitignore');
         const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
         ig = ignore.default().add(gitignoreContent);
+        // Extract gitignore patterns for glob's ignore parameter
+        // Need to normalize patterns for glob: remove leading slashes, add ** variants for directories
+        gitignorePatterns = gitignoreContent
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('#') && !line.startsWith('!'))
+          .flatMap(line => {
+            // Remove leading slash (gitignore root notation)
+            const normalized = line.startsWith('/') ? line.slice(1) : line;
+            // If it's a directory pattern, include both the directory and its contents
+            if (normalized.endsWith('/')) {
+              const dir = normalized.slice(0, -1);
+              return [dir, `${dir}/**`, `**/${dir}`, `**/${dir}/**`];
+            }
+            // For regular patterns, include both root and nested matches
+            return [normalized, `**/${normalized}`];
+          });
       } catch (_error) {
         // No .gitignore or couldn't read it
       }
@@ -976,12 +994,14 @@ export class CodebaseIndexer {
     // Scan with glob
     const includePatterns = this.config.include || ['**/*'];
     const excludePatterns = this.config.exclude || [];
+    // Combine exclude patterns with gitignore patterns to avoid scanning ignored directories
+    const allIgnorePatterns = [...excludePatterns, ...gitignorePatterns];
 
     for (const pattern of includePatterns) {
       const matches = await glob(pattern, {
         cwd: this.rootPath,
         absolute: true,
-        ignore: excludePatterns,
+        ignore: allIgnorePatterns,
         nodir: true
       });
 
