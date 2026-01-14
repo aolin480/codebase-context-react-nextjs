@@ -91,7 +91,7 @@ export async function scanWorkspacePackageJsons(rootPath: string): Promise<Packa
   return results;
 }
 
-function hasAnyDependency(allDeps: Record<string, string>, names: string[]): boolean {
+function _hasAnyDependency(allDeps: Record<string, string>, names: string[]): boolean {
   return names.some((n) => Boolean(allDeps[n]));
 }
 
@@ -154,7 +154,7 @@ function detectLibraries(allDeps: Record<string, string>, candidates: string[]):
 
 function maybeDetectNx(allDeps: Record<string, string>): boolean {
   // Nx can be indicated by nx.json, workspace.json, or @nx/* deps. We keep it light and dependency-based.
-  if (Boolean(allDeps["nx"])) return true;
+  if (allDeps["nx"]) return true;
   if (Object.keys(allDeps).some((name) => name.startsWith("@nx/"))) return true;
   if (Object.keys(allDeps).some((name) => name.startsWith("@nrwl/"))) return true;
   return false;

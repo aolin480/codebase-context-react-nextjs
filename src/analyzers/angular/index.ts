@@ -1023,11 +1023,45 @@ export class AngularAnalyzer implements FrameworkAnalyzer {
     const classMatch = content.match(/(?:export\s+)?class\s+(\w+)/);
     const className = classMatch ? classMatch[1] : fileName;
 
+    type AngularDecoratorMetadata = {
+      selector?: unknown;
+      inputs?: unknown;
+      outputs?: unknown;
+      providedIn?: unknown;
+      name?: unknown;
+      imports?: unknown;
+      declarations?: unknown;
+    };
+
+    type AngularChunkMetadata = {
+      selector?: unknown;
+      inputs?: unknown;
+      outputs?: unknown;
+      providedIn?: unknown;
+      pipeName?: unknown;
+      imports?: unknown;
+      declarations?: unknown;
+      decorator?: AngularDecoratorMetadata;
+    };
+
+    const angularMetadata = metadata as unknown as AngularChunkMetadata;
+
+    const countArray = (value: unknown): number => (Array.isArray(value) ? value.length : 0);
+
     switch (componentType) {
       case 'component': {
-        const selector = metadata?.selector || 'unknown';
-        const inputs = Array.isArray(metadata?.inputs) ? metadata.inputs.length : 0;
-        const outputs = Array.isArray(metadata?.outputs) ? metadata.outputs.length : 0;
+        const selector =
+          typeof angularMetadata.selector === 'string'
+            ? angularMetadata.selector
+            : typeof angularMetadata.decorator?.selector === 'string'
+              ? angularMetadata.decorator.selector
+              : 'unknown';
+
+        const inputs =
+          countArray(angularMetadata.inputs) || countArray(angularMetadata.decorator?.inputs);
+        const outputs =
+          countArray(angularMetadata.outputs) || countArray(angularMetadata.decorator?.outputs);
+
         const lifecycle = this.extractLifecycleMethods(content);
         return `Angular component '${className}' (selector: ${selector})${
           lifecycle ? ` with ${lifecycle}` : ''
@@ -1035,7 +1069,13 @@ export class AngularAnalyzer implements FrameworkAnalyzer {
       }
 
       case 'service': {
-        const providedIn = metadata?.providedIn || 'unknown';
+        const providedIn =
+          typeof angularMetadata.providedIn === 'string'
+            ? angularMetadata.providedIn
+            : typeof angularMetadata.decorator?.providedIn === 'string'
+              ? angularMetadata.decorator.providedIn
+              : 'unknown';
+
         const methods = this.extractPublicMethods(content);
         return `Angular service '${className}' (providedIn: ${providedIn})${
           methods ? ` providing ${methods}` : ''
@@ -1048,20 +1088,31 @@ export class AngularAnalyzer implements FrameworkAnalyzer {
       }
 
       case 'directive': {
-        const directiveSelector = metadata?.selector || 'unknown';
+        const directiveSelector =
+          typeof angularMetadata.selector === 'string'
+            ? angularMetadata.selector
+            : typeof angularMetadata.decorator?.selector === 'string'
+              ? angularMetadata.decorator.selector
+              : 'unknown';
         return `Angular directive '${className}' (selector: ${directiveSelector}).`;
       }
 
       case 'pipe': {
-        const pipeName = metadata?.pipeName || 'unknown';
+        const pipeName =
+          typeof angularMetadata.pipeName === 'string'
+            ? angularMetadata.pipeName
+            : typeof angularMetadata.decorator?.name === 'string'
+              ? angularMetadata.decorator.name
+              : 'unknown';
         return `Angular pipe '${className}' (name: ${pipeName}) for data transformation.`;
       }
 
       case 'module': {
-        const imports = Array.isArray(metadata?.imports) ? metadata.imports.length : 0;
-        const declarations = Array.isArray(metadata?.declarations)
-          ? metadata.declarations.length
-          : 0;
+        const imports =
+          countArray(angularMetadata.imports) || countArray(angularMetadata.decorator?.imports);
+        const declarations =
+          countArray(angularMetadata.declarations) ||
+          countArray(angularMetadata.decorator?.declarations);
         return `Angular module '${className}' with ${declarations} declarations and ${imports} imports.`;
       }
 

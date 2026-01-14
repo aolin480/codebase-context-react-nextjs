@@ -561,37 +561,30 @@ export class CodebaseIndexer {
             // GENERIC PATTERN FORWARDING
             // Framework analyzers return detectedPatterns in metadata - we just forward them
             // This keeps the indexer framework-agnostic
-            if (
-              result.metadata?.detectedPatterns &&
-              Array.isArray(result.metadata.detectedPatterns)
-            ) {
-              for (const pattern of result.metadata.detectedPatterns as Array<{
-                category: string;
-                name: string;
-              }>) {
-                // Try to extract a relevant snippet for the pattern
-                // Ask analyzer registry for snippet pattern (framework-agnostic delegation)
-                const analyzer = analyzerRegistry.findAnalyzer(file);
-                const snippetPattern =
-                  analyzer?.getSnippetPattern?.(pattern.category, pattern.name) ?? null;
-                const snippet = snippetPattern ? extractSnippet(snippetPattern) : undefined;
-                patternDetector.track(
-                  pattern.category,
-                  pattern.name,
-                  snippet ? { file: relPath, snippet } : undefined,
-                  fileDate
-                );
-              }
+            const detectedPatternsRaw = result.metadata?.detectedPatterns;
+            const detectedPatterns: Array<{ category: string; name: string }> = Array.isArray(
+              detectedPatternsRaw
+            )
+              ? (detectedPatternsRaw as Array<{ category: string; name: string }>)
+              : [];
+
+            for (const pattern of detectedPatterns) {
+              // Try to extract a relevant snippet for the pattern
+              // Ask analyzer registry for snippet pattern (framework-agnostic delegation)
+              const analyzer = analyzerRegistry.findAnalyzer(file);
+              const snippetPattern =
+                analyzer?.getSnippetPattern?.(pattern.category, pattern.name) ?? null;
+              const snippet = snippetPattern ? extractSnippet(snippetPattern) : undefined;
+              patternDetector.track(
+                pattern.category,
+                pattern.name,
+                snippet ? { file: relPath, snippet } : undefined,
+                fileDate
+              );
             }
 
             // Track file for Golden File scoring (framework-agnostic)
             // A golden file = file with patterns in ≥3 distinct categories
-            const rawPatterns = result.metadata?.detectedPatterns;
-            const detectedPatterns: Array<{ category: string; name: string }> = Array.isArray(
-              rawPatterns
-            )
-              ? (rawPatterns as Array<{ category: string; name: string }>)
-              : [];
             const uniqueCategories = new Set(detectedPatterns.map((p) => p.category));
             const patternScore = uniqueCategories.size;
             if (patternScore >= 3) {

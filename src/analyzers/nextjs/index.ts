@@ -12,7 +12,7 @@
 
 import { promises as fs } from "fs";
 import path from "path";
-import { parse } from "@typescript-eslint/typescript-estree";
+import { parse, TSESTree } from "@typescript-eslint/typescript-estree";
 import {
   AnalysisResult,
   CodebaseMetadata,
@@ -105,13 +105,13 @@ export class NextJsAnalyzer implements FrameworkAnalyzer {
           const source = node.source.value as string;
           imports.push({
             source,
-            imports: node.specifiers.map((s: any) => {
+            imports: node.specifiers.map((s: TSESTree.ImportClause) => {
               if (s.type === "ImportDefaultSpecifier") return "default";
               if (s.type === "ImportNamespaceSpecifier") return "*";
               return s.imported?.name || s.local?.name || "unknown";
             }),
             isDefault: node.specifiers.some(
-              (s: any) => s.type === "ImportDefaultSpecifier"
+              (s: TSESTree.ImportClause) => s.type === "ImportDefaultSpecifier"
             ),
             isDynamic: false,
             line: node.loc?.start.line,
@@ -135,7 +135,7 @@ export class NextJsAnalyzer implements FrameworkAnalyzer {
               }
             }
           } else if (node.specifiers && node.specifiers.length > 0) {
-            for (const s of node.specifiers as any[]) {
+            for (const s of node.specifiers as TSESTree.ExportSpecifier[]) {
               if (s.exported?.name) exports.push({ name: s.exported.name, isDefault: false, type: "re-export" });
             }
           }
@@ -269,7 +269,7 @@ export class NextJsAnalyzer implements FrameworkAnalyzer {
   }
 
   summarize(chunk: CodeChunk): string {
-    const next = chunk.metadata?.nextjs;
+    const next = chunk.metadata?.nextjs as { kind?: string; routePath?: string; router?: string; isClientComponent?: boolean } | undefined;
     if (next?.kind && next?.routePath) {
       const kind = next.kind;
       const router = next.router || "unknown";
@@ -447,12 +447,18 @@ async function tryLoadIndexStatistics(rootPath: string): Promise<CodebaseMetadat
       return base;
     }
     const indexContent = await fs.readFile(indexPath, "utf-8");
-    const chunks = (await parseJsonInWorker<any[]>(indexContent)) as any[];
+    const chunks = (await parseJsonInWorker<Array<{
+      filePath: string;
+      startLine: number;
+      endLine: number;
+      componentType?: string;
+      layer?: string;
+    }>>(indexContent));
 
     if (Array.isArray(chunks) && chunks.length > 0) {
-      base.totalFiles = new Set(chunks.map((c: any) => c.filePath)).size;
+      base.totalFiles = new Set(chunks.map((c) => c.filePath)).size;
       base.totalLines = chunks.reduce(
-        (sum: number, c: any) => sum + (c.endLine - c.startLine + 1),
+        (sum: number, c) => sum + (c.endLine - c.startLine + 1),
         0
       );
       for (const chunk of chunks) {

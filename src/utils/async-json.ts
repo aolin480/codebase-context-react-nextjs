@@ -29,7 +29,7 @@ export async function parseJsonInWorker<T>(json: string): Promise<T> {
       void worker.terminate();
     };
 
-    worker.once("message", (msg: any) => {
+    worker.once("message", (msg: { ok?: boolean; value?: T; error?: string }) => {
       cleanup();
       if (msg?.ok) resolve(msg.value as T);
       else reject(new Error(msg?.error || "Failed to parse JSON"));
