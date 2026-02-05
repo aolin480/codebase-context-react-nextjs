@@ -26,6 +26,10 @@
       "import": "./dist/analyzers/nextjs/index.js",
       "types": "./dist/analyzers/nextjs/index.d.ts"
     },
+    "./analyzers/nx": {
+      "import": "./dist/analyzers/nx/index.js",
+      "types": "./dist/analyzers/nx/index.d.ts"
+    },
     "./analyzers/generic": {
       "import": "./dist/analyzers/generic/index.js",
       "types": "./dist/analyzers/generic/index.d.ts"
@@ -122,9 +126,10 @@
     "watch": "tsc -w",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "vitest run tests/nextjs-analyzer.test.ts tests/react-analyzer.test.ts",
+    "smoke": "vitest run tests/nextjs-analyzer.test.ts tests/react-analyzer.test.ts tests/nx-analyzer.test.ts tests/nx-analyzer.in-depth.test.ts",
     "smoke:nextjs": "vitest run tests/nextjs-analyzer.test.ts",
     "smoke:react": "vitest run tests/react-analyzer.test.ts",
+    "smoke:nx": "vitest run tests/nx-analyzer.test.ts tests/nx-analyzer.in-depth.test.ts",
     "smoke:build": "pnpm run build && pnpm run smoke",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
