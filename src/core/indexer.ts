@@ -205,6 +205,20 @@ async function cleanupDirectory(dirPath: string): Promise<void> {
   }
 }
 
+const DEFAULT_MAX_CHUNKS = 5000;
+
+function getMaxChunks(): number {
+  const raw = process.env.CODEBASE_CONTEXT_MAX_CHUNKS;
+  if (raw != null && raw.trim() !== '') {
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || Number.isNaN(parsed) || parsed <= 0) {
+      return DEFAULT_MAX_CHUNKS;
+    }
+    return parsed;
+  }
+  return DEFAULT_MAX_CHUNKS;
+}
+
 export interface IndexerOptions {
   rootPath: string;
   config?: Partial<CodebaseConfig>;
@@ -633,7 +647,7 @@ export class CodebaseIndexer {
       const chunksForEmbedding = diff ? changedChunks : allChunks;
 
       // Memory safety: limit chunks to prevent embedding memory issues
-      const MAX_CHUNKS = 5000;
+      const MAX_CHUNKS = getMaxChunks();
       let chunksToEmbed = chunksForEmbedding;
       if (chunksForEmbedding.length > MAX_CHUNKS) {
         console.warn(
