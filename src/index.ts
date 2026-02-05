@@ -29,6 +29,7 @@ import { analyzerRegistry } from './core/analyzer-registry.js';
 import { AngularAnalyzer } from './analyzers/angular/index.js';
 import { NextJsAnalyzer } from './analyzers/nextjs/index.js';
 import { ReactAnalyzer } from './analyzers/react/index.js';
+import { NxAnalyzer } from './analyzers/nx/index.js';
 import { GenericAnalyzer } from './analyzers/generic/index.js';
 import { IndexCorruptedError } from './errors/index.js';
 import {
@@ -54,6 +55,7 @@ import { TOOLS, dispatchTool, type ToolContext } from './tools/index.js';
 analyzerRegistry.register(new AngularAnalyzer());
 analyzerRegistry.register(new NextJsAnalyzer());
 analyzerRegistry.register(new ReactAnalyzer());
+analyzerRegistry.register(new NxAnalyzer());
 analyzerRegistry.register(new GenericAnalyzer());
 
 // Resolve root path with validation
@@ -747,20 +749,6 @@ async function main() {
     }
     indexState.status = 'ready';
     indexState.lastIndexed = new Date();
-    
-    // Pre-warm the embedding model in background to avoid timeout on first search
-    // This loads the ML model (can take 30-90s) before any search request comes in
-    if (process.env.CODEBASE_CONTEXT_PREWARM_MODEL !== 'false') {
-      logStartup('[DEBUG] Pre-warming embedding model...');
-      import('./embeddings/index.js')
-        .then(({ getEmbeddingProvider }) => getEmbeddingProvider())
-        .then(() => {
-          logStartup('[DEBUG] Embedding model ready');
-        })
-        .catch((err) => {
-          console.warn('[WARN] Failed to pre-warm embedding model:', err.message);
-        });
-    }
   }
 
   const transport = new StdioServerTransport();
