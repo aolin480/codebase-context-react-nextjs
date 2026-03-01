@@ -1,46 +1,3 @@
-## Props to PatrickSys for his work on the original codebase-context MCP. I needed to extend it for React/NextJS
-https://github.com/PatrickSys/codebase-context
-
-# Codebase Context (ReactJS/NextJS/+)
-
-This branch extends the original `codebase-context` MCP server with **React** and **Next.js** analyzers (while keeping Angular support) so agents can produce higher-signal, framework-aware answers across mixed codebases.
-
-**What’s new in this fork**
-- **Ecosystem detection**: package.json-driven detection of Angular / React / Next.js and common libraries (forms, validation, data, state, styling).
-- **React analyzer**: detects components (function + class), built-in/custom hooks, Context usage, memoization, and Suspense patterns.
-- **Next.js analyzer**: detects App Router vs Pages Router, route kinds (`page`/`layout`/`route`/`api`), route paths, `"use client"`, and metadata exports.
-- **Quieter startup by default**: set `CODEBASE_CONTEXT_DEBUG=1` only when you want startup/index logs.
-
-## Quick Start
-
-Add this to your MCP client config (Claude Desktop, VS Code, Cursor, etc.):
-
-```json
-{
-  "mcpServers": {
-    "codebase-context": {
-      "command": "npx",
-      "args": ["-y", "github:aolin480/codebase-context-react-nextjs#master", "/path/to/your/project"]
-    }
-  }
-}
-```
-
-For additional client examples (Warp, Codex, Gemini, OpenCode), see `MCPCONFIG.md`.
-
-## Smoke Tests
-
-From this repo root:
-
-```bash
-npm run smoke:build
-npm run smoke
-npm run smoke:nextjs
-npm run smoke:react
-```
-
----
-
 # codebase-context
 
 ## Local-first second brain for AI Agents working on your codebase
@@ -68,7 +25,16 @@ One tool call returns all of it. Local-first - your code never leaves your machi
 
 ## Quick Start
 
-Add it to the configuration of your AI Agent of preference:
+Add this to your MCP client config (Claude Desktop, VS Code, Cursor, etc.).
+
+```json
+"mcpServers": {
+  "codebase-context": {
+    "command": "npx",
+    "args": ["-y", "codebase-context", "/path/to/your/project"]
+  }
+}
+```
 
 ### Claude Code
 
