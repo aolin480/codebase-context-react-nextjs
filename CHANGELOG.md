@@ -1,5 +1,74 @@
 # Changelog
 
+## [1.8.0](https://github.com/aolin480/codebase-context-react-nextjs/compare/v1.7.0...v1.8.0) (2026-03-02)
+
+
+### Features
+
+* **02-03:** implement keyword-index symbol reference lookup ([ccfc564](https://github.com/aolin480/codebase-context-react-nextjs/commit/ccfc5649a3f4e321bbd3770e5945f83213e103a6))
+* **02-03:** register get_symbol_references MCP tool ([6f6bc3a](https://github.com/aolin480/codebase-context-react-nextjs/commit/6f6bc3ae3bfa9af13c404028c1307d774b69291c))
+* **03-01:** add frozen controlled eval fixture and local codebase ([46736ed](https://github.com/aolin480/codebase-context-react-nextjs/commit/46736ed4c4681767164682a774e1ddf08ee81768))
+* **03-03:** add multi-codebase eval runner command ([b065042](https://github.com/aolin480/codebase-context-react-nextjs/commit/b065042f9a689d82485532872009af571d22db44))
+* **03-03:** centralize eval harness scoring logic ([5c5319b](https://github.com/aolin480/codebase-context-react-nextjs/commit/5c5319b4a3c9caf30f7b31de3ee210bc153ee58c))
+* **04-01:** add curated grammar manifest, sync script, and publish inclusion ([908f39a](https://github.com/aolin480/codebase-context-react-nextjs/commit/908f39a2c82a9630150262299ec8ae1f25c269ab))
+* **04-01:** update tree-sitter loader to resolve packaged grammars and fail closed ([458520f](https://github.com/aolin480/codebase-context-react-nextjs/commit/458520ff3d24bd9ff6399b6bedfe1b6776fc6579))
+* **04-02:** add manifest-driven grammar CI test with fail-closed fallback ([2559405](https://github.com/aolin480/codebase-context-react-nextjs/commit/2559405007e17bad6fffcf6ea61b97475f0da1e6))
+* **05-01:** create AST-aligned chunking engine with symbol tree builder ([f865abc](https://github.com/aolin480/codebase-context-react-nextjs/commit/f865abc0a3877441b492695c02ddca12fe9b36c6))
+* **05-01:** wire AST-aligned chunker into GenericAnalyzer with 21 unit tests ([68a2d6d](https://github.com/aolin480/codebase-context-react-nextjs/commit/68a2d6da844a9ffdb6104670c565f338487d2199))
+* **05-02:** add scope-aware prefix generation to AST chunks ([3dbd43e](https://github.com/aolin480/codebase-context-react-nextjs/commit/3dbd43eec1d6cdf63ec4d5094c870bf2ee6b164d))
+* **06-01:** add index format metadata and headers ([a216c6d](https://github.com/aolin480/codebase-context-react-nextjs/commit/a216c6dd2c7614b705525bc30ba8fddf918c7cf3))
+* **06-01:** gate index consumers on IndexMeta validation ([6a52c0d](https://github.com/aolin480/codebase-context-react-nextjs/commit/6a52c0d33d408a7463e036eac8a650c461c86a43))
+* **06-02:** implement staging directory build and atomic swap for full rebuild ([d719801](https://github.com/aolin480/codebase-context-react-nextjs/commit/d71980128795bdf8e7c7ab16beb350729a85e306))
+* **AST indexing:** Implement relationship index  ([#38](https://github.com/aolin480/codebase-context-react-nextjs/issues/38)) ([5b05092](https://github.com/aolin480/codebase-context-react-nextjs/commit/5b05092b4d5a4a08b117fdc06a3292afdcc8764e))
+* Auto-heal for silent semantic search failure ([9fde6c0](https://github.com/aolin480/codebase-context-react-nextjs/commit/9fde6c0e5df5d3ca602147e00ff5b10262ca6c75))
+* CLI formatters + response types + debug gating ([#48](https://github.com/aolin480/codebase-context-react-nextjs/issues/48)) ([7a6cd7b](https://github.com/aolin480/codebase-context-react-nextjs/commit/7a6cd7b61e27adb62861d6a264c2ac1feba4d96d))
+* **docs, mcp:** Improve the progress logging and documentation. ([10045bd](https://github.com/aolin480/codebase-context-react-nextjs/commit/10045bdc93472e615bb47f22c9d32420f06559c4))
+* expose all 10 MCP tools via CLI + document them ([#42](https://github.com/aolin480/codebase-context-react-nextjs/issues/42)) ([7581fba](https://github.com/aolin480/codebase-context-react-nextjs/commit/7581fbac5b4fd5bc52abc56d946bf55962870566))
+* **impact:** persist import edge details + 2-hop impact candidates ([f296e30](https://github.com/aolin480/codebase-context-react-nextjs/commit/f296e30834777770c70f9c20998576e123ea7592))
+* **impact:** persist import edge details and 2-hop candidates ([5bd84a1](https://github.com/aolin480/codebase-context-react-nextjs/commit/5bd84a1c6174c2ae6a413579c471e68ccc30f377))
+* **memory:** v1.4.0 Memory System  ([#9](https://github.com/aolin480/codebase-context-react-nextjs/issues/9)) ([3da3439](https://github.com/aolin480/codebase-context-react-nextjs/commit/3da34392a119b21c286b67d26b25aec72ecdfc49))
+* Pattern Momentum - detect migration direction via git history (v1.1.0) ([ced0e18](https://github.com/aolin480/codebase-context-react-nextjs/commit/ced0e18038e6c692aa42a3943f5320971ab1187e))
+* prepare v1.5.0 trust and indexing foundation ([#21](https://github.com/aolin480/codebase-context-react-nextjs/issues/21)) ([a6b65f1](https://github.com/aolin480/codebase-context-react-nextjs/commit/a6b65f134c32a35de1e305839ef294be9f97a7d0))
+* references confidence, remove get_component_usage, ranked search hints ([#39](https://github.com/aolin480/codebase-context-react-nextjs/issues/39)) ([33616aa](https://github.com/aolin480/codebase-context-react-nextjs/commit/33616aa48b165d5cfd95c44bc416cb74c4fd5cbf))
+* **refs:** tree-sitter identifier-aware symbol references ([2aa0831](https://github.com/aolin480/codebase-context-react-nextjs/commit/2aa08315103fa1b87b20d4f212ab271caeee670c))
+* **refs:** Tree-sitter identifier-aware symbol references ([c23ffec](https://github.com/aolin480/codebase-context-react-nextjs/commit/c23ffecf4174a6d683d4b985a754ca2ad840cfe1))
+* rework decision-card to make it based on AST parsing ([#41](https://github.com/aolin480/codebase-context-react-nextjs/issues/41)) ([ac4389d](https://github.com/aolin480/codebase-context-react-nextjs/commit/ac4389d6cc55b7f8efc310a6e020bcd184a70adc))
+* symbol ranking, smart snippets, and edit decision card ([#40](https://github.com/aolin480/codebase-context-react-nextjs/issues/40)) ([03964b3](https://github.com/aolin480/codebase-context-react-nextjs/commit/03964b3f40cc0fa0caf9768747a39fb559daaa8e))
+* use tree-sitter symbols in generic analyzer ([b470709](https://github.com/aolin480/codebase-context-react-nextjs/commit/b470709aa77f02325ed5a4e2b0710017020565da))
+* **v1.2.0:** testing patterns detection, golden files extraction, wrapper libraries detection, file watcher for incrementalish indexing ([8f3bf68](https://github.com/aolin480/codebase-context-react-nextjs/commit/8f3bf6831c6197f168a9744526f6d42f1fc78ccb))
+* v1.3.0 foundation (workspace utils, metadata fix, testing) ([#4](https://github.com/aolin480/codebase-context-react-nextjs/issues/4)) ([fc8eb35](https://github.com/aolin480/codebase-context-react-nextjs/commit/fc8eb3543854fc57c20f2f8d34948ade5c566c9a))
+* v1.6.0 search quality improvements ([#26](https://github.com/aolin480/codebase-context-react-nextjs/issues/26)) ([8207787](https://github.com/aolin480/codebase-context-react-nextjs/commit/8207787db45c9ee3940e22cb3fd8bc88a2c6a63b))
+* **watcher:** chokidar auto-refresh with debounced incremental reindex ([59e3686](https://github.com/aolin480/codebase-context-react-nextjs/commit/59e36867cd4048c858b08d2c551ca94adb6738ac))
+* **watcher:** chokidar auto-refresh with debounced incremental reindex ([f300961](https://github.com/aolin480/codebase-context-react-nextjs/commit/f300961b73b1ee867bfc43f0b2925d3f7c055447))
+
+
+### Bug Fixes
+
+* **02-01:** fall back when tree-sitter parse has errors ([8a7cd92](https://github.com/aolin480/codebase-context-react-nextjs/commit/8a7cd92cab25b045b5108b1cba04773f644eab10))
+* **02-tree-sitter-02:** prevent symbol-aware chunk merging ([fd02625](https://github.com/aolin480/codebase-context-react-nextjs/commit/fd0262516e262eff0c17646eaca021d6288c6647))
+* **03-02:** add regression guardrails for extraction and large-file safety ([a1c71de](https://github.com/aolin480/codebase-context-react-nextjs/commit/a1c71de070b434f326dc80e627964c1540eea93f))
+* **03-02:** harden tree-sitter extraction against byte-offset and parser failures ([375a48f](https://github.com/aolin480/codebase-context-react-nextjs/commit/375a48f231c85d72157aa74ea964db27bf9a983e))
+* close v1.8 post-merge integration gaps ([#44](https://github.com/aolin480/codebase-context-react-nextjs/issues/44)) ([d28460c](https://github.com/aolin480/codebase-context-react-nextjs/commit/d28460c38bf91e8cb40a76501a03378c2edc11b5))
+* **format:** apply prettier formatting to all source files ([049269f](https://github.com/aolin480/codebase-context-react-nextjs/commit/049269f1afb75df1adcd8948b724272cb74f4976))
+* guard null chunk.content crash + docs rewrite for v1.6.1 ([6b89778](https://github.com/aolin480/codebase-context-react-nextjs/commit/6b8977897665ea3207e1bbb0f5d685c61d41bbb8))
+* guard startup logs for wide MCP STDIO compatibility ([a72f35b](https://github.com/aolin480/codebase-context-react-nextjs/commit/a72f35bb480ee86fb9c0498713bf874b0d9574c0))
+* harden search reliability and indexing hygiene ([#22](https://github.com/aolin480/codebase-context-react-nextjs/issues/22)) ([42a32af](https://github.com/aolin480/codebase-context-react-nextjs/commit/42a32af626f30dc9c8428419f82a6c03c7312e22))
+* improve gitignore handling to prevent scanning ignored directories ([e23fb8b](https://github.com/aolin480/codebase-context-react-nextjs/commit/e23fb8b52beae9a77915dda9b482b6bf1fbe7108))
+* **lint:** disable no-explicit-any rule for AST manipulation code ([41547da](https://github.com/aolin480/codebase-context-react-nextjs/commit/41547da2aa5529dce3d539c296d5e9d79df379fe))
+* **lint:** remove useless try/catch in search.ts ([39f777e](https://github.com/aolin480/codebase-context-react-nextjs/commit/39f777ef85a82fc0cb093dcf1a12f338c985c51e))
+* **refs:** prevent out-of-root file reads from index ([1735e3c](https://github.com/aolin480/codebase-context-react-nextjs/commit/1735e3cb51f808c3bd1c9afed4f1139bad851e8f))
+* singleton embedding provider and LanceDB schema validation ([106ee1a](https://github.com/aolin480/codebase-context-react-nextjs/commit/106ee1aa0f44243a6e3c41c41b171a9827b9eece))
+* update prepublishOnly to use pnpm (Greptile audit) ([5197711](https://github.com/aolin480/codebase-context-react-nextjs/commit/51977119e475f9b376e2c4727b618b765d46e517))
+* use cosine distance for vector search scoring ([b41edb7](https://github.com/aolin480/codebase-context-react-nextjs/commit/b41edb7e4c1969b04d834ec52a9ae43760e796a9))
+* **watcher:** allow debounce 0 and harden test ([070433c](https://github.com/aolin480/codebase-context-react-nextjs/commit/070433cf79dace7420c26284ceeca7fea41dc8a1))
+* **watcher:** queue refresh during indexing ([2d78110](https://github.com/aolin480/codebase-context-react-nextjs/commit/2d781105f9d56e3b5644abe90ae88978e4d7b0d0))
+
+
+### Performance Improvements
+
+* **impact:** avoid per-candidate array alloc ([faf6e73](https://github.com/aolin480/codebase-context-react-nextjs/commit/faf6e73101d1c76f17e755df35d8e34a1783a6fa))
+* **impact:** avoid per-candidate array allocation ([04e68eb](https://github.com/aolin480/codebase-context-react-nextjs/commit/04e68eb3c7d5a2a5aaa45a82ef6823e6f13ce6a9))
+
 ## [1.7.0](https://github.com/PatrickSys/codebase-context/compare/v1.6.1...v1.7.0) (2026-02-21)
 
 
