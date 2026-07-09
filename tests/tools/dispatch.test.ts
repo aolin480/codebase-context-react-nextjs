@@ -53,6 +53,34 @@ describe('Tool Dispatch', () => {
     });
   });
 
+  it('publishes accurate MCP annotations for every tool', () => {
+    const readOnlyTools = new Set([
+      'search_codebase',
+      'get_codebase_metadata',
+      'get_indexing_status',
+      'get_style_guide',
+      'get_team_patterns',
+      'get_symbol_references',
+      'detect_circular_dependencies',
+      'get_memory',
+      'get_codebase_health'
+    ]);
+
+    TOOLS.forEach((tool) => {
+      expect(tool.annotations?.title).toBeTruthy();
+      expect(tool.annotations?.destructiveHint).toBe(false);
+      expect(tool.annotations?.openWorldHint).toBe(false);
+      expect(tool.annotations?.readOnlyHint).toBe(readOnlyTools.has(tool.name));
+    });
+
+    expect(TOOLS.find((tool) => tool.name === 'refresh_index')?.annotations).toMatchObject({
+      idempotentHint: false
+    });
+    expect(TOOLS.find((tool) => tool.name === 'remember')?.annotations).toMatchObject({
+      idempotentHint: true
+    });
+  });
+
   it('dispatchTool returns error for unknown tool', async () => {
     const mockCtx: ToolContext = {
       indexState: { status: 'idle' },

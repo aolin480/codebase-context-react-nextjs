@@ -27,6 +27,43 @@ const PROJECT_DIRECTORY_PROPERTY: Record<string, string> = {
   description: 'Deprecated compatibility alias for older clients. Prefer project.'
 };
 
+type ToolAnnotations = NonNullable<Tool['annotations']>;
+
+const READ_ONLY_LOCAL: ToolAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: false
+};
+
+const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
+  search_codebase: { title: 'Search Codebase', ...READ_ONLY_LOCAL },
+  get_codebase_metadata: { title: 'Get Codebase Metadata', ...READ_ONLY_LOCAL },
+  get_indexing_status: { title: 'Get Indexing Status', ...READ_ONLY_LOCAL },
+  refresh_index: {
+    title: 'Refresh Index',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false
+  },
+  get_style_guide: { title: 'Get Style Guide', ...READ_ONLY_LOCAL },
+  get_team_patterns: { title: 'Get Team Patterns', ...READ_ONLY_LOCAL },
+  get_symbol_references: { title: 'Get Symbol References', ...READ_ONLY_LOCAL },
+  detect_circular_dependencies: {
+    title: 'Detect Circular Dependencies',
+    ...READ_ONLY_LOCAL
+  },
+  remember: {
+    title: 'Remember Codebase Knowledge',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false
+  },
+  get_memory: { title: 'Get Codebase Memory', ...READ_ONLY_LOCAL },
+  get_codebase_health: { title: 'Get Codebase Health', ...READ_ONLY_LOCAL }
+};
+
 function withProjectSelector(definition: Tool): Tool {
   const schema = definition.inputSchema;
   if (!schema || schema.type !== 'object') {
@@ -52,9 +89,18 @@ function withProjectSelector(definition: Tool): Tool {
   };
 }
 
-export const TOOLS: Tool[] = [d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11].map(
-  withProjectSelector
-);
+function withAnnotations(definition: Tool): Tool {
+  const annotations = TOOL_ANNOTATIONS[definition.name];
+  if (!annotations) {
+    throw new Error(`Missing MCP annotations for tool: ${definition.name}`);
+  }
+
+  return { ...definition, annotations };
+}
+
+export const TOOLS: Tool[] = [d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11]
+  .map(withProjectSelector)
+  .map(withAnnotations);
 
 export async function dispatchTool(
   name: string,
